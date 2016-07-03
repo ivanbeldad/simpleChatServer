@@ -52,6 +52,7 @@ public class SendMessagesService implements Runnable {
 
     private void send() throws IOException {
 
+
         Socket socket;
         InetSocketAddress address;
         OutputStream os;

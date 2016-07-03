@@ -89,6 +89,8 @@ public class LoginService implements Runnable {
                     // WRITE USER
                     oos.writeObject(user);
                     System.out.println("Inicio de sesión con éxito.");
+                    System.out.println("Email: " + user.getEmail());
+                    System.out.println("Ip: " + user.getIp());
 
                     // WRITE CONTACTS
                     oos.writeObject(getAllContacts());

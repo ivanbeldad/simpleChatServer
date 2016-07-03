@@ -99,7 +99,7 @@ public class AliveService implements Runnable {
 
                 } catch (IOException e) {
 
-                    System.out.println(users.get(i).getEmail() + ": Desconectado. Cambiando su estado a no conectado.");
+                    System.out.println(users.get(i).getEmail() + ": " + users.get(i).getIp() + ": Desconectado.");
 
                     User user = users.get(i);
                     user.setOnline(false);
@@ -126,6 +126,8 @@ public class AliveService implements Runnable {
 
                 socket = new Socket();
                 address = new InetSocketAddress(users.get(i).getIp(), Main.PORT_ALIVE);
+
+                System.out.println(users.get(i).getEmail() + ": " + users.get(i).getIp());
 
                 try {
                     socket.connect(address, 1000);
