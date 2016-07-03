@@ -1,13 +1,16 @@
 package com.rackian.services;
 
 import com.rackian.Main;
+import com.rackian.models.Filer;
 import com.rackian.models.Message;
+import com.rackian.models.User;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
 
 public class SendMessagesService implements Runnable {
 
@@ -46,12 +49,15 @@ public class SendMessagesService implements Runnable {
             System.out.println("Mensaje enviado a " + message.getUserDest().getEmail());
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
 
     }
 
-    private void send() throws IOException {
+    private void send() throws IOException, ClassNotFoundException {
 
+        if (!available(message)) return;
 
         Socket socket;
         InetSocketAddress address;
@@ -66,6 +72,26 @@ public class SendMessagesService implements Runnable {
         oos.writeObject(message);
 
         socket.close();
+
+    }
+
+    private boolean available(Message message) throws IOException, ClassNotFoundException {
+
+        Filer<User> filer;
+        filer = new Filer<>(Main.FILE_USERS);
+        List<User> users;
+
+        synchronized (Main.FILE_USERS) {
+            users = filer.readAll();
+        }
+
+        for (User user : users) {
+            if (message.getUserDest().compareTo(user) == 0) {
+                return user.isOnline();
+            }
+        }
+
+        return false;
 
     }
 
