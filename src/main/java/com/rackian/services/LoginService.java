@@ -2,10 +2,13 @@ package com.rackian.services;
 
 import com.rackian.Main;
 import com.rackian.models.Filer;
+import com.rackian.models.Message;
 import com.rackian.models.User;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoginService implements Runnable {
 
@@ -80,10 +83,18 @@ public class LoginService implements Runnable {
                     // GUARDO EL USUARIO
                     user = saveUser(user.getEmail(), socket);
 
-                    // CONFIRMO INICIO Y ENVIO INFORMACION DE HOST
+                    // CONFIRMO INICIO
                     oos.writeObject(true);
+
+                    // WRITE USER
                     oos.writeObject(user);
                     System.out.println("Inicio de sesión con éxito.");
+
+                    // WRITE CONTACTS
+                    oos.writeObject(getAllContacts());
+
+                    // WRITE MESSAGES
+                    oos.writeObject(loadMessages(user));
                 } else {
                     // YA ESTABA LOGUEADO, DESCONECTESE ANTES COÑO
                     oos.writeObject(false);
@@ -176,6 +187,42 @@ public class LoginService implements Runnable {
         }
 
         return false;
+
+    }
+
+    private List<Message> loadMessages(User user) throws IOException, ClassNotFoundException {
+
+        Filer<Message> filer;
+        filer = new Filer<>(Main.FILE_MESSAGES);
+        List<Message> messages;
+
+        synchronized (Main.FILE_MESSAGES) {
+            messages = filer.readAll();
+        }
+
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i).getUserOri().compareTo(user) != 0 &&
+                    messages.get(i).getUserDest().compareTo(user) != 0) {
+                messages.remove(i);
+                i--;
+            }
+        }
+
+        return messages;
+
+    }
+
+    private List<User> getAllContacts() throws IOException, ClassNotFoundException {
+
+        List<User> users;
+        Filer<User> filer;
+        filer = new Filer<>(Main.FILE_USERS);
+
+        synchronized (Main.FILE_USERS) {
+            users = filer.readAll();
+        }
+
+        return users;
 
     }
 

@@ -4,6 +4,8 @@ import com.rackian.Main;
 import com.rackian.models.Filer;
 import com.rackian.models.User;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -58,12 +60,19 @@ public class AliveService implements Runnable {
 
     private void checkHosts() throws IOException, ClassNotFoundException, InterruptedException {
 
+        boolean changes;
         Filer<User> filer;
         filer = new Filer<>(Main.FILE_USERS);
+        Socket socket;
+        InetSocketAddress address;
+        OutputStream os;
+        ObjectOutputStream oos;
 
         List<User> users;
 
         while (true) {
+
+            changes = false;
 
             synchronized (Main.FILE_USERS) {
                 users = filer.readAll();
@@ -77,10 +86,8 @@ public class AliveService implements Runnable {
                 }
             }
 
+            // COMPRUEBO LOS QUE SE HAN DESCONECTADO
             for (int i = 0; i < users.size(); i++) {
-
-                Socket socket;
-                InetSocketAddress address;
 
                 socket = new Socket();
                 address = new InetSocketAddress(users.get(i).getIp(), Main.PORT_ALIVE);
@@ -89,7 +96,6 @@ public class AliveService implements Runnable {
 
                     socket.connect(address, 1000);
                     System.out.println(users.get(i).getEmail() + ": Conectado.");
-                    socket.close();
 
                 } catch (IOException e) {
 
@@ -104,9 +110,34 @@ public class AliveService implements Runnable {
                     }
 
                     i--;
+                    changes = true;
 
                 }
 
+            }
+
+            // AVISO A TODOS LOS DEMÁS LOS QUE ESTÁN CONECTADOS
+            // PERO QUITANDO LAS CONTRASEÑAS
+
+            for (int i = 0; i< users.size(); i++)
+                users.get(i).setPassword("");
+
+            for (int i = 0; i < users.size(); i++) {
+
+                socket = new Socket();
+                address = new InetSocketAddress(users.get(i).getIp(), Main.PORT_ALIVE);
+
+                try {
+                    socket.connect(address, 1000);
+                    os = socket.getOutputStream();
+                    oos = new ObjectOutputStream(os);
+                    oos.writeObject(users);
+
+                } catch (Exception ex) {
+
+                }
+
+                socket.close();
 
             }
 
