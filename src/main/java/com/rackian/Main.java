@@ -1,6 +1,5 @@
 package com.rackian;
 
-import com.rackian.services.AliveService;
 import com.rackian.services.LoginService;
 import com.rackian.services.ReceiveMessagesService;
 import com.rackian.services.RegisterService;
