@@ -5,6 +5,7 @@ import com.rackian.models.Filer;
 import com.rackian.models.Message;
 import com.rackian.models.User;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -97,6 +98,14 @@ public class LoginService implements Runnable {
 
                     // WRITE MESSAGES
                     oos.writeObject(loadMessages(user));
+
+                    // START ALIVESERVICE
+                    AliveServicev2 aliveServicev2;
+                    aliveServicev2 = new AliveServicev2();
+                    aliveServicev2.setPort(Main.PORT_ALIVE);
+                    aliveServicev2.setUserFileLoc(Main.FILE_USERS);
+                    aliveServicev2.setUser(user);
+                    Main.pool.execute(aliveServicev2);
                 } else {
                     // YA ESTABA LOGUEADO, DESCONECTESE ANTES COÑO
                     oos.writeObject(false);
@@ -162,6 +171,8 @@ public class LoginService implements Runnable {
 
             // GUARDO LA INFORMACION EN EL ARCHIVO
             filer.save(user);
+
+            filer.readAll().forEach(e -> System.out.println(e.getEmail() + ": " + e.isOnline()));
 
         }
 
