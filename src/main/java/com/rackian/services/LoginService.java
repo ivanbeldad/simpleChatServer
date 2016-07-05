@@ -102,10 +102,13 @@ public class LoginService implements Runnable {
                     // START ALIVESERVICE
                     AliveServicev2 aliveServicev2;
                     aliveServicev2 = new AliveServicev2();
-                    aliveServicev2.setPort(Main.PORT_ALIVE);
                     aliveServicev2.setUserFileLoc(Main.FILE_USERS);
                     aliveServicev2.setUser(user);
                     Main.pool.execute(aliveServicev2);
+
+                    // WRITE SERVICE PORT
+                    oos.writeObject(AliveServicev2.getServerPort());
+
                 } else {
                     // YA ESTABA LOGUEADO, DESCONECTESE ANTES COÑO
                     oos.writeObject(false);
@@ -218,6 +221,9 @@ public class LoginService implements Runnable {
                     messages.get(i).getUserDest().compareTo(user) != 0) {
                 messages.remove(i);
                 i--;
+            } else {
+                messages.get(i).setStatus(Message.STATUS_RECEIVED);
+                filer.update(messages.get(i));
             }
         }
 

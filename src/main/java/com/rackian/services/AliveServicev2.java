@@ -2,45 +2,37 @@ package com.rackian.services;
 
 import com.rackian.Main;
 import com.rackian.models.Filer;
+import com.rackian.models.Message;
 import com.rackian.models.User;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.List;
 
 public class AliveServicev2 implements Runnable {
 
     // FIELDS
 
-    private int port;
     private String userFileLoc;
     private User user;
+    private static int serverPort = 10000;
 
 
     // CONSTRUCTORS
 
     public AliveServicev2() {
+        serverPort++;
     }
 
-    public AliveServicev2(int port, String userFileLoc, User user) {
-        this.port = port;
+    public AliveServicev2(String userFileLoc, User user) {
         this.userFileLoc = userFileLoc;
         this.user = user;
+        serverPort++;
     }
 
     // GETTER AND SETTERS
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
 
     public String getUserFileLoc() {
         return userFileLoc;
@@ -58,16 +50,20 @@ public class AliveServicev2 implements Runnable {
         this.user = user;
     }
 
+    public static int getServerPort() {
+        return serverPort;
+    }
+
     @Override
     public void run() {
         try {
-            System.out.println("Servicio de comprobación de estado iniciado.");
-            checkHosts();
+            System.out.println("Servicio de comprobación de estado iniciado. Puerto: " + serverPort);
+            checkPing();
         } catch (Exception e) {
         }
     }
 
-    private void checkHosts() throws IOException, ClassNotFoundException, InterruptedException {
+    private void checkPing() throws IOException, ClassNotFoundException, InterruptedException {
 
         Filer<User> filer;
         filer = new Filer<>(Main.FILE_USERS);
@@ -77,11 +73,12 @@ public class AliveServicev2 implements Runnable {
         OutputStream os;
         ObjectOutputStream oos;
 
-        serverSocket = new ServerSocket(Main.PORT_ALIVE);
-        serverSocket.setSoTimeout(3000);
-
         // COMPRUEBO SI SE HA DESCONECTADO
         try {
+
+            serverSocket = new ServerSocket(serverPort);
+            serverSocket.setSoTimeout(3000);
+
             while (true) {
 
                 synchronized (Main.FILE_USERS) {
@@ -89,15 +86,34 @@ public class AliveServicev2 implements Runnable {
                 }
 
                 socket = serverSocket.accept();
+
+                if (!socket.getInetAddress().getHostAddress().equals(user.getIp())) {
+                    socket.close();
+                    break;
+                }
+
                 os = socket.getOutputStream();
                 oos = new ObjectOutputStream(os);
+
+                // WRITE USERS
                 oos.writeObject(true);
                 oos.writeObject(users);
-                socket.close();
 
+                // WRITE MESSAGES
+                List<Message> messages;
+                messages = checkNewMessages();
+                if (messages != null) {
+                    oos.writeObject(true);
+                    oos.writeObject(messages);
+                } else {
+                    oos.writeObject(false);
+                }
+
+                socket.close();
                 System.out.println(user.getEmail() + ": Conectado.");
 
             }
+
         } catch (IOException ex) {
             user.setOnline(false);
             synchronized (Main.FILE_USERS) {
@@ -105,6 +121,37 @@ public class AliveServicev2 implements Runnable {
             }
             System.out.println(user.getEmail() + ": Se ha desconectado.");
         }
+
+    }
+
+    private List<Message> checkNewMessages() throws IOException, ClassNotFoundException {
+
+        List<Message> messages;
+        Filer<Message> filer;
+        filer = new Filer<>(Main.FILE_MESSAGES);
+        synchronized (Main.FILE_MESSAGES) {
+            messages = filer.readAll();
+        }
+
+        for (int i = 0; i < messages.size(); i++) {
+            if (( messages.get(i).getUserDest().compareTo(user) != 0) ||
+                    messages.get(i).getStatus() != Message.STATUS_SENT) {
+                messages.remove(i);
+                i--;
+            }
+        }
+
+        if (messages.size() == 0) return null;
+
+        for (int i = 0; i < messages.size(); i++) {
+            System.out.println("MENSAJE ENVIADO a " + user.getEmail() + ": " + messages.get(i).getMessage());
+            messages.get(i).setStatus(Message.STATUS_RECEIVED);
+            synchronized (Main.FILE_MESSAGES) {
+                filer.update(messages.get(i));
+            }
+        }
+
+        return messages;
 
     }
 

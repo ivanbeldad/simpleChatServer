@@ -174,6 +174,31 @@ public class Filer<T extends Serializable & Comparable> {
 
     }
 
+    public void remove(int position) throws IOException, ClassNotFoundException {
+
+        if (!exists()) return;
+
+        // LOAD FILE IN ARRAY AND DELETE ELEMENT FROM THIS
+        List<T> elements;
+        elements = readAll();
+
+        for (int i = 0; i < elements.size(); i++) {
+            if (i == position) {
+                position = -1;
+                elements.remove(i);
+                i--;
+            }
+        }
+
+        // SAVE THE NEW ARRAY
+
+        File file = new File(location);
+        file.delete();
+
+        save(elements);
+
+    }
+
     public void remove(T comparableObject) throws IOException, ClassNotFoundException {
 
         if (!exists()) return;

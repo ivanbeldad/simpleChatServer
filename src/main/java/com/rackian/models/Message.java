@@ -1,5 +1,8 @@
 package com.rackian.models;
 
+import com.rackian.Main;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -9,6 +12,8 @@ public class Message implements Serializable, Comparable<Message> {
     public static final int STATUS_RECEIVED = 2;
     public static final int STATUS_READ = 3;
 
+    private int id;
+    private static Integer nextId;
     private User userOri;
     private User userDest;
     private String message;
@@ -16,13 +21,21 @@ public class Message implements Serializable, Comparable<Message> {
     private int status;
 
     public Message() {
-    }
 
-    public Message(User userOri, User userDest, String message, LocalDateTime time) {
-        this.userOri = userOri;
-        this.userDest = userDest;
-        this.message = message;
-        this.time = time;
+        if (nextId == null) {
+            try {
+                Filer<Message> filer;
+                filer = new Filer<>(Main.FILE_MESSAGES);
+                nextId = filer.readAll().size();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            nextId++;
+        }
+
+        id = nextId;
+
     }
 
     public User getUserOri() {
@@ -84,9 +97,13 @@ public class Message implements Serializable, Comparable<Message> {
         this.status = status;
     }
 
+    public int getId() {
+        return id;
+    }
+
     @Override
     public int compareTo(Message o) {
-        return this.getTime().compareTo(o.getTime());
+        return this.getId() - o.getId();
     }
 
 }

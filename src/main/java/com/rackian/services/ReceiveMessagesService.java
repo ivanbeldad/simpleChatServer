@@ -61,8 +61,13 @@ public class ReceiveMessagesService implements Runnable {
 
         Message message;
         message = receiptMessage();
-        saveMessage(message);
-        sendMessage(message);
+        Message newMessage = new Message();
+        newMessage.setUserOri(message.getUserOri());
+        newMessage.setUserDest(message.getUserDest());
+        newMessage.setStatus(message.getStatus());
+        newMessage.setTime(message.getTime());
+        newMessage.setMessage(message.getMessage());
+        saveMessage(newMessage);
 
         System.out.println("Mensaje recibido de " + message.getUserOri().getEmail());
         System.out.println("Destinatario del mensaje: " + message.getUserDest().getEmail());
@@ -104,18 +109,6 @@ public class ReceiveMessagesService implements Runnable {
         synchronized (Main.FILE_MESSAGES) {
             filer.save(message);
         }
-
-    }
-
-    private void sendMessage(Message message) {
-
-        SendMessagesService sendMessageService;
-        sendMessageService = new SendMessagesService();
-        sendMessageService.setMessage(message);
-        sendMessageService.setPort(Main.PORT_SEND_MESSAGES);
-        Thread messageSender;
-        messageSender = new Thread(sendMessageService);
-        messageSender.start();
 
     }
 
