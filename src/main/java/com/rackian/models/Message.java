@@ -5,10 +5,15 @@ import java.time.LocalDateTime;
 
 public class Message implements Serializable, Comparable<Message> {
 
+    public static final int STATUS_SENT = 1;
+    public static final int STATUS_RECEIVED = 2;
+    public static final int STATUS_READ = 3;
+
     private User userOri;
     private User userDest;
     private String message;
     private LocalDateTime time;
+    private int status;
 
     public Message() {
     }
@@ -69,6 +74,14 @@ public class Message implements Serializable, Comparable<Message> {
         time += this.time.getMinute();
 
         return time;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
     }
 
     @Override

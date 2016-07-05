@@ -64,8 +64,8 @@ public class ReceiveMessagesService implements Runnable {
         saveMessage(message);
         sendMessage(message);
 
-        System.out.println("Mensaje recibido de " + message.getUserOri().getEmail() + "\n" +
-         "Destinatario del mensaje: " + message.getUserDest().getEmail());
+        System.out.println("Mensaje recibido de " + message.getUserOri().getEmail());
+        System.out.println("Destinatario del mensaje: " + message.getUserDest().getEmail());
 
     }
 
@@ -83,6 +83,7 @@ public class ReceiveMessagesService implements Runnable {
         ois = new ObjectInputStream(is);
 
         message = (Message) ois.readObject();
+        message.setStatus(Message.STATUS_SENT);
 
         ois.close();
         is.close();

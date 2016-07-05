@@ -21,7 +21,6 @@ public class Main {
 
     private static Runnable loginService;
     private static Runnable registerService;
-    private static Runnable aliveService;
     private static Runnable receiveMessagesService;
 
     public static void main(String[] args) {
@@ -30,12 +29,10 @@ public class Main {
 
         loginService = new LoginService(PORT_LOGIN, FILE_USERS);
         registerService = new RegisterService(PORT_REGISTER, FILE_USERS);
-        //aliveService = new AliveService(PORT_ALIVE, FILE_USERS);
         receiveMessagesService = new ReceiveMessagesService(PORT_RECEIVE_MESSAGES, FILE_MESSAGES);
 
         pool.execute(loginService);
         pool.execute(registerService);
-        //pool.execute(aliveService);
         pool.execute(receiveMessagesService);
 
         System.out.println("Servicios iniciados.");

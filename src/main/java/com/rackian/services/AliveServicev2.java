@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
@@ -60,7 +61,6 @@ public class AliveServicev2 implements Runnable {
     @Override
     public void run() {
         try {
-            Thread.sleep(1000);
             System.out.println("Servicio de comprobación de estado iniciado.");
             checkHosts();
         } catch (Exception e) {
@@ -69,42 +69,41 @@ public class AliveServicev2 implements Runnable {
 
     private void checkHosts() throws IOException, ClassNotFoundException, InterruptedException {
 
-        boolean changes;
         Filer<User> filer;
         filer = new Filer<>(Main.FILE_USERS);
+        List<User> users;
+        ServerSocket serverSocket;
         Socket socket;
         OutputStream os;
         ObjectOutputStream oos;
-        InetSocketAddress address;
 
-        address = new InetSocketAddress(user.getIp(), Main.PORT_ALIVE);
-
-        List<User> users;
+        serverSocket = new ServerSocket(Main.PORT_ALIVE);
+        serverSocket.setSoTimeout(3000);
 
         // COMPRUEBO SI SE HA DESCONECTADO
         try {
             while (true) {
+
                 synchronized (Main.FILE_USERS) {
                     users = filer.readAll();
                 }
-                socket = new Socket();
-                socket.connect(address, 500);
-                System.out.println(user.getEmail() + ": Conectado.");
 
+                socket = serverSocket.accept();
                 os = socket.getOutputStream();
                 oos = new ObjectOutputStream(os);
                 oos.writeObject(true);
                 oos.writeObject(users);
-
                 socket.close();
-                Thread.sleep(500);
+
+                System.out.println(user.getEmail() + ": Conectado.");
+
             }
         } catch (IOException ex) {
-            System.out.println(user.getEmail() + ": Se ha desconectado.");
             user.setOnline(false);
             synchronized (Main.FILE_USERS) {
                 filer.update(user);
             }
+            System.out.println(user.getEmail() + ": Se ha desconectado.");
         }
 
     }
